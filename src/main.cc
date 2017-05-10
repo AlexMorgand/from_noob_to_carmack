@@ -1,196 +1,215 @@
-// /!\ glew should be declared before freeglut.
+// /!\ glew should be declared before freeglut/glfw/sdnl ...
+#define GLEW_STATIC
+// Handle the different opengl functions.
 #include <GL/glew.h>
-#include <GL/freeglut.h>
-#include "math_3d.hh"
+// Window and input handling library.
+#include <GLFW/glfw3.h>
+
+// C++ libraries.
 #include <iostream>
-#include <string.h>
-#include "ogldev_util.h"
+#include <fstream>
+#include <list>
 
-GLint winWidth = 600, winHeight = 600;
-
-// The vertex buffer is a global variable.
-GLuint VBO;
-
-const char* pVSFileName = "shader.vs";
-const char* pFSFileName = "shader.fs";
-
-void add_shader(GLuint shader_program, const char* shader_text, GLenum shader_type)
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
-  // Our shader.
-  GLuint shader_obj = glCreateShader(shader_type);
-
-  if (shader_obj == 0)
-  {
-    fprintf(stderr, "Error creating shader type %d\n", shader_type);
-    exit(0);
-  }
-
-  const GLchar* p[1];
-  p[0] = shader_text;
-  GLint len[1];
-  len[0] = strlen(shader_text);
-  glShaderSource(shader_obj, 1, p, len);
-  glCompileShader(shader_obj);
-  GLint success;
-  glGetShaderiv(shader_obj, GL_COMPILE_STATUS, &success);
-  if (!success)
-  {
-    GLchar InfoLog[1024];
-    glGetShaderInfoLog(shader_obj, sizeof(InfoLog), NULL, InfoLog);
-    fprintf(stderr, "Error compiling shader type %d: '%s'\n", shader_type, InfoLog);
-    exit(1);
-  }
-  glAttachShader(shader_program, shader_obj);
+	// When a user presses the escape key, we set the WindowShouldClose property to true,
+	// closing the application
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	{
+		glfwSetWindowShouldClose(window, GL_TRUE);
+		std::cout << "Application is closing now." << std::endl;
+	}
+	else if (key == GLFW_KEY_U)
+		std::cout << "Pressing U." << std::endl;
 }
 
-void compile_shaders()
+void create_scene(GLuint* VBO, GLuint* VAO)
 {
-  // All the shaders will be linked to this variable.
-  GLuint shader_program = glCreateProgram();
-  std::string vs, fs;
+	// Set up vertex data (and buffer(s)) and attribute pointers.
+    GLfloat vertices[] = {-0.5f, -0.5f, 0.0f,
+						  0.5f, -0.5f, 0.0f, 
+						  0.0f,  0.5f, 0.0f};
 
-  if (!ReadFile(pVSFileName, vs))
-    exit(1);
+	// Create one array object (our vertex array object).
+    glGenVertexArrays(1, VAO);
+	// Create one buffer object (our vertex buffer object).
+    glGenBuffers(1, VBO);
 
-  if (!ReadFile(pFSFileName, fs))
-    exit(1);
+    // Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
+    glBindVertexArray(*VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, *VBO);
 
-  add_shader(shader_program, vs.c_str(), GL_VERTEX_SHADER);
-  add_shader(shader_program, fs.c_str(), GL_FRAGMENT_SHADER);
+	// Fill the type array buffer with our vertices. Static data since we do not want it to move.
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-  GLint Success = 0;
-  GLchar ErrorLog[1024] = { 0 };
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
 
-  glLinkProgram(shader_program);
-  glGetProgramiv(shader_program, GL_LINK_STATUS, &Success);
-  if (Success == 0)
-  {
-    glGetProgramInfoLog(shader_program, sizeof(ErrorLog), NULL, ErrorLog);
-    fprintf(stderr, "Error linking shader program: '%s'\n", ErrorLog);
-  }
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
 
-  glValidateProgram(shader_program);
-  glGetProgramiv(shader_program, GL_VALIDATE_STATUS, &Success);
-  if (!Success)
-  {
-    glGetProgramInfoLog(shader_program, sizeof(ErrorLog), NULL, ErrorLog);
-    fprintf(stderr, "Invalid shader program: '%s'\n", ErrorLog);
-    exit(1);
-  }
+	// Unbind VAO by setting it to a null pointer 
+	// (it's always a good thing to unbind any buffer/array to prevent strange bugs).
+    glBindVertexArray(0);
 
-  glUseProgram(shader_program);
-}
-
-void render_scene(void)
-{
-
-  /*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-  glBegin(GL_POINTS);
-  glVertex3f(0.0, 0.0, 0.0);
-  glEnd();
-
-  glBegin(GL_TRIANGLES);
-  glVertex3f(0.0, 0.0, 0.0);
-  glVertex3f(1.0, 0.0, 0.0);
-  glVertex3f(0.5, 1.0, 0.0);
-  glEnd();
-
-  glFlush();*/
-
-
-  // We clear the buffer with the color specified above.
-  glClear(GL_COLOR_BUFFER_BIT);
-
-  // This part is linking a shader and c++. Here, we deal with a vertex.
-  glEnableVertexAttribArray(0);
-
-  // New binding ?
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-  // Not very clear but we specify the vertex attribute (type/length/flags).
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-  // We are not using a index buffer so we use a orderned draw. Start from index 0 and draw 1 vertex.
-  //glDrawArrays(GL_POINTS, 0, 1);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
-
-  // Good practice after drawing. We make the ressource accessible for any shader or others.
-  glDisableVertexAttribArray(0);
-
-  // Switch between the front and back buffer. I supposed this
-  // is not working for a single buffer mode.
-  glutSwapBuffers();
 
 }
 
-
-static void init_vertex_buffer()
+//FIXME: return an error code here too.
+void compile_shader(GLuint* shaderProgram, std::list<std::pair<std::string, GLenum >> shader_code_l)
 {
+	GLint success;
+	GLchar infoLog[512];
+    *shaderProgram = glCreateProgram();
+    // Build and compile our shader program
 
-  // Init a null vector.
-  Vector3f Vertices[3];
-  Vertices[0] = Vector3f(-1.0f, -1.0f, 0.0f);
-  Vertices[1] = Vector3f(1.0f, -1.0f, 0.0f);
-  Vertices[2] = Vector3f(0.0f, 1.0f, 0.0f);
+	for (auto elt = shader_code_l.begin(); elt != shader_code_l.end(); ++elt)
+	{
+		const GLchar* tmp = elt->first.c_str();
+		GLenum e = elt->second;
 
-  // Generate the vertex buffer.
-  glGenBuffers(1, &VBO);
+		GLuint shader = glCreateShader(e);
+		glShaderSource(shader, 1, &tmp, nullptr);
+		glCompileShader(shader);
+		// Check for compile time errors
+		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		}
+		
+		// Link shader.
+		glAttachShader(*shaderProgram, shader);
+		glDeleteShader(shader);
+	}
 
-  // Bind a vector to the buffer. We bind it to a target name and
-  // the action are done to the target and not the handle (VBO).
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-  // Fill the VBO with the vertices.
-  // Static draw because the scene is not moving.
-  glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
+    // Link shaders to the main program.
+    glLinkProgram(*shaderProgram);
+    // Check for linking errors.
+    glGetProgramiv(*shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(*shaderProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
+	// Since it's linked, free the shaders.
+    /*glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);*/
 }
 
-void reshape_win(GLint w, GLint h)
+// FIXME: not a very C++ thing to do here.
+int init_glfw(GLFWwindow** w)
 {
-  glViewport(0, 0, w, h);
+	// See documentation. Call this before any OpenGL function.
+	glewExperimental = GL_TRUE;
 
-  winWidth = w;
-  winHeight = h;
+	glfwInit();
+
+	// We want OpenGL 3.3
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	// We choose to enable resizable window.
+	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+
+	*w = glfwCreateWindow(800, 600, "Carmack Rendering", nullptr, nullptr);
+	if (w == nullptr)
+	{
+		std::cout << "Failed to create GLFW window" << std::endl;
+		glfwTerminate();
+		return -1;
+	}
+	// The current display is this window.
+	glfwMakeContextCurrent(*w);
+	// Link the function for the key listening.
+	glfwSetKeyCallback(*w, key_callback);
+	return 0;
 }
+
+int init_glew()
+{	
+	if (glewInit() != GLEW_OK)
+	{
+		std::cout << "Failed to initialize GLEW" << std::endl;
+		return -1;
+	}
+	glViewport(0, 0, 800, 600);
+	return 0;
+}
+
+std::list<std::pair<std::string, GLenum>> load_shader_file(std::list<std::pair<std::string, GLenum>> shader_l)
+{
+	std::list<std::pair<std::string, GLenum>> shader_code_l;
+	for (auto elt = shader_l.begin(); elt != shader_l.end(); ++elt)
+	{
+		std::ifstream file;
+		file.open(elt->first, std::ifstream::in);
+
+		std::string str((std::istreambuf_iterator<char>(file)),
+						 std::istreambuf_iterator<char>());
+		shader_code_l.push_back(make_pair(str, elt->second));
+	}
+	return shader_code_l;
+}
+
 
 int main(int argc, char* argv[])
 {
-  // Initialization of glut library.
-  glutInit(&argc, argv);
+	// This is our vertex buffer object.
+	GLuint VBO;
+	// This is our vertex array object.
+	GLuint VAO;
 
-  // Display mode with double buffer and colors in RGBA.
-  // Double buffer will increase the quality of the display and avoid
-  // flickering.
-  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
+	// Init GLFW.
+	int error_code = 0;
+	GLFWwindow* window = nullptr;
+	error_code = init_glfw(&window);
+	if (error_code)
+		return error_code;
 
-  // Init the window size/position/name.
-  glutInitWindowSize(1024, 768);
-  glutInitWindowPosition(winWidth, winHeight);
-  glutCreateWindow("Carmack project");
+	error_code = init_glew();
+	if (error_code)
+		return error_code;
+	
+	std::list<std::pair<std::string, GLenum >> shader_l;
+	std::string fs("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.fs");
+	std::string vs("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs");
+	shader_l.push_back(make_pair(fs, GL_FRAGMENT_SHADER));
+	shader_l.push_back(make_pair(vs, GL_VERTEX_SHADER));
 
-  // Init glew (to handle different extensions) and check for errors.
-  GLenum res = glewInit();
-  if (res != GLEW_OK)
-  {
-    std::cerr << "Error: " << glewGetErrorString(res) << std::endl;
-    return 1;
-  }
+	std::list<std::pair<std::string, GLenum >> shader_code_l = load_shader_file(shader_l);
 
-  // Clean the screen.
-  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	GLuint shaderProgram;
+	// Handle the shaders, load them and bind them.
+	compile_shader(&shaderProgram, shader_code_l);
 
-  init_vertex_buffer();
-  compile_shaders();
+	// Create the scene and init the context (VBO, ...).
+	create_scene(&VBO, &VAO);
 
-  // Bind the display function.
-  glutDisplayFunc(render_scene);
-  glutReshapeFunc(reshape_win);
+	// Main loop.
+	while(!glfwWindowShouldClose(window))
+	{
+		// Listen to events, inputs and window interactions.
+		glfwPollEvents();
 
-  // The main loop is always called at the end.
-  glutMainLoop();
+		// Rendering.
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		
+		glUseProgram(shaderProgram);
+		// FIXME: the usage of the VAO is not clear to me.
+		// Do we use a VAO to avoid some cumbersome procedure ? (declare the vertex in the VBO and release it ?).
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(0);
 
-  return 0;
+		// Swap the buffer to avoid the flickering.
+		glfwSwapBuffers(window);
+	}
+    // Properly de-allocate all resources once they've outlived their purpose
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+
+	glfwTerminate();
+	return error_code;
 }
 
