@@ -19,22 +19,50 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		glfwSetWindowShouldClose(window, GL_TRUE);
 		std::cout << "Application is closing now." << std::endl;
 	}
-	else if (key == GLFW_KEY_U)
-		std::cout << "Pressing U." << std::endl;
+	else if (key == GLFW_KEY_Z && action == GLFW_PRESS)
+	{
+		GLint polygonMode;
+		glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
+		if (polygonMode == GL_LINE)
+		{
+			std::cout << "Switching to wireframe" << std::endl;
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+		else
+		{
+			std::cout << "Switching to faces" << std::endl;
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+	}
 }
 
-void create_scene(GLuint* VBO, GLuint* VAO)
+void create_scene(GLuint* VBO, GLuint* VAO, GLuint* EBO)
 {
 	// Set up vertex data (and buffer(s)) and attribute pointers.
-    GLfloat vertices[] = {-0.5f, -0.5f, 0.0f,
-						  0.5f, -0.5f, 0.0f, 
-						  0.0f,  0.5f, 0.0f};
+    GLfloat vertices[] = {-0.5f, 0.5f, 0.0f,
+						  0.5f,  0.5f, 0.0f, 
+						  0.5f,  -0.5f, 0.0f,
+						  -0.5f,  -0.5f, 0.0f};
 
-	// Create one array object (our vertex array object).
-    glGenVertexArrays(1, VAO);
+	GLuint indices[] = {0, 1, 2,
+		                2, 3, 0};
+
+	
+
 	// Create one buffer object (our vertex buffer object).
     glGenBuffers(1, VBO);
+	
+	// Create one array object (our vertex array object).
+	// Our vertex array object will keep track (and store) every changes in the context caused by the VBO.
+	// To do all the drawing, we just have to bind the VAO and it's done.
+    glGenVertexArrays(1, VAO);
 
+	// To avoid duplication of the vertices, we will use indices to draw our triangles.
+	// To do so, we use an element object buffer. Every changes made the the EOB are also recorded in the VAO.
+	glGenBuffers(1, EBO);
+
+
+	// FIXME: move it above no ?
     // Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
     glBindVertexArray(*VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, *VBO);
@@ -46,6 +74,13 @@ void create_scene(GLuint* VBO, GLuint* VAO)
     glEnableVertexAttribArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0); // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
+
+	
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	
+
+	
 
 	// Unbind VAO by setting it to a null pointer 
 	// (it's always a good thing to unbind any buffer/array to prevent strange bugs).
@@ -158,6 +193,8 @@ int main(int argc, char* argv[])
 	GLuint VBO;
 	// This is our vertex array object.
 	GLuint VAO;
+	// This is our element buffer object.
+	GLuint EBO;
 
 	// Init GLFW.
 	int error_code = 0;
@@ -183,7 +220,7 @@ int main(int argc, char* argv[])
 	compile_shader(&shaderProgram, shader_code_l);
 
 	// Create the scene and init the context (VBO, ...).
-	create_scene(&VBO, &VAO);
+	create_scene(&VBO, &VAO, &EBO);
 
 	// Main loop.
 	while(!glfwWindowShouldClose(window))
@@ -199,7 +236,7 @@ int main(int argc, char* argv[])
 		// FIXME: the usage of the VAO is not clear to me.
 		// Do we use a VAO to avoid some cumbersome procedure ? (declare the vertex in the VBO and release it ?).
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
 		// Swap the buffer to avoid the flickering.
