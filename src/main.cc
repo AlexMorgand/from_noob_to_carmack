@@ -88,7 +88,6 @@ void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<
 		// (it's always a good thing to unbind any buffer/array to prevent strange bugs).
 		glBindVertexArray(0);
 
-
 		++i;
 	}
 
@@ -136,9 +135,6 @@ void compile_shader(GLuint* shaderProgram, std::list<std::pair<std::string, GLen
         glGetProgramInfoLog(*shaderProgram, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
     }
-	// Since it's linked, free the shaders.
-    /*glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);*/
 }
 
 // FIXME: not a very C++ thing to do here.
@@ -267,15 +263,21 @@ int main(int argc, char* argv[])
 		glfwPollEvents();
 
 		// Rendering.
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		
 		auto elt_shader = shader_program_l.begin();
 		for (auto elt_vao = VAO_l.begin(); elt_vao != VAO_l.end(); ++elt_vao, ++ elt_shader)
 		{
+			
+			// We need to have an active shader before setting (not getting) the uniform (global) variable.
 			glUseProgram((*elt_shader));
-			// FIXME: the usage of the VAO is not clear to me.
-			// Do we use a VAO to avoid some cumbersome procedure ? (declare the vertex in the VBO and release it ?).
+
+			GLfloat time = glfwGetTime();
+			GLfloat greenv = (sin(time) / 2) + 0.5;
+			GLint vertex_var_loc = glGetUniformLocation((*elt_shader), "openGLColor");
+			glUniform4f(vertex_var_loc, 0.0f, greenv, 0.0f, 1.0f);
+
 			glBindVertexArray(*elt_vao);
 			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 			glBindVertexArray(0);
@@ -285,6 +287,7 @@ int main(int argc, char* argv[])
 		glfwSwapBuffers(window);
 	}
 
+	// Clearning.
 	auto elt_vao = VAO_l.begin();
 	auto elt_vbo = VBO_l.begin();
 	auto elt_ebo = EBO_l.begin();
