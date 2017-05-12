@@ -38,7 +38,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
-
 void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<GLuint>* EBO_l)
 {
 	// Set up vertex data (and buffer(s)) and attribute pointers.
@@ -92,51 +91,7 @@ void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<
 
 		++i;
 	}
-
-	
-
-
-	
-
-}
-
-//FIXME: return an error code here too.
-void compile_shader(GLuint* shaderProgram, std::list<std::pair<std::string, GLenum >> shader_code_l)
-{
-	GLint success;
-	GLchar infoLog[512];
-    *shaderProgram = glCreateProgram();
-    // Build and compile our shader program
-
-	for (auto elt = shader_code_l.begin(); elt != shader_code_l.end(); ++elt)
-	{
-		const GLchar* tmp = elt->first.c_str();
-		GLenum e = elt->second;
-
-		GLuint shader = glCreateShader(e);
-		glShaderSource(shader, 1, &tmp, nullptr);
-		glCompileShader(shader);
-		// Check for compile time errors
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if (!success)
-		{
-			glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-		}
-		
-		// Link shader.
-		glAttachShader(*shaderProgram, shader);
-		glDeleteShader(shader);
-	}
-
-    // Link shaders to the main program.
-    glLinkProgram(*shaderProgram);
-    // Check for linking errors.
-    glGetProgramiv(*shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(*shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
+	// FIXME: clear VBO/EBO ...
 }
 
 // FIXME: not a very C++ thing to do here.
@@ -178,22 +133,6 @@ int init_glew()
 	glViewport(0, 0, 800, 600);
 	return 0;
 }
-
-std::list<std::pair<std::string, GLenum>> load_shader_file(std::list<std::pair<std::string, GLenum>> shader_l)
-{
-	std::list<std::pair<std::string, GLenum>> shader_code_l;
-	for (auto elt = shader_l.begin(); elt != shader_l.end(); ++elt)
-	{
-		std::ifstream file;
-		file.open(elt->first, std::ifstream::in);
-
-		std::string str((std::istreambuf_iterator<char>(file)),
-						 std::istreambuf_iterator<char>());
-		shader_code_l.push_back(make_pair(str, elt->second));
-	}
-	return shader_code_l;
-}
-
 
 int main(int argc, char* argv[])
 {
@@ -270,7 +209,7 @@ int main(int argc, char* argv[])
 		glfwSwapBuffers(window);
 	}
 
-	// Clearning.
+	// Clearing.
 	auto elt_vao = VAO_l.begin();
 	auto elt_vbo = VBO_l.begin();
 	auto elt_ebo = EBO_l.begin();

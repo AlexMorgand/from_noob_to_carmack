@@ -29,7 +29,6 @@ std::string ShaderManager::load_code(std::string path)
 void ShaderManager::compile_shader(std::string source_code, GLenum type)
 {
 	GLint success;
-	GLchar infoLog[512];
 
     // Build and compile our shader program
 	const GLchar* tmp = source_code.c_str();
@@ -41,8 +40,8 @@ void ShaderManager::compile_shader(std::string source_code, GLenum type)
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 	if (!success)
 	{
-		glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		glGetShaderInfoLog(shader, 512, nullptr, infoLog_);
+		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog_ << std::endl;
 		error_code_ = -1;
 	}
 		
@@ -56,8 +55,8 @@ void ShaderManager::compile_shader(std::string source_code, GLenum type)
     glGetProgramiv(program_, GL_LINK_STATUS, &success);
     if (!success)
 	{
-        glGetProgramInfoLog(program_, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+        glGetProgramInfoLog(program_, 512, NULL, infoLog_);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog_ << std::endl;
 		error_code_ = -1;
     }
 }

@@ -19,6 +19,7 @@ class ShaderManager
 		std::string load_code(std::string path);
 		GLuint program_;
 		unsigned int error_code_;
+		GLchar infoLog_[512];
 };
 
 #endif
