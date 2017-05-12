@@ -10,6 +10,8 @@
 #include <fstream>
 #include <list>
 
+#include "shader_manager.hh"
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
 	// When a user presses the escape key, we set the WindowShouldClose property to true,
@@ -225,33 +227,14 @@ int main(int argc, char* argv[])
 	if (error_code)
 		return error_code;
 	
-	// FIXME: cumbersome...
-	std::list<std::pair<std::string, GLenum >> shader_l1;
-	std::string fs("C:/Users/am237982/Desktop/AlexFormation/openGL/src/red.fs");
-	std::string vs("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs");
-	shader_l1.push_back(make_pair(fs, GL_FRAGMENT_SHADER));
-	shader_l1.push_back(make_pair(vs, GL_VERTEX_SHADER));
+	ShaderManager red("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
+		       "C:/Users/am237982/Desktop/AlexFormation/openGL/src/red.fs");
+	ShaderManager orange("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
+		          "C:/Users/am237982/Desktop/AlexFormation/openGL/src/orange.fs");
 
-	std::list<std::pair<std::string, GLenum >> shader_code_l1 = load_shader_file(shader_l1);
-
-	
-	std::list<std::pair<std::string, GLenum >> shader_l2;
-	fs = std::string("C:/Users/am237982/Desktop/AlexFormation/openGL/src/orange.fs");
-	vs = std::string("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs");
-	shader_l2.push_back(make_pair(fs, GL_FRAGMENT_SHADER));
-	shader_l2.push_back(make_pair(vs, GL_VERTEX_SHADER));
-
-	std::list<std::pair<std::string, GLenum >> shader_code_l2 = load_shader_file(shader_l2);
-
-	GLuint shaderProgram1;
-	GLuint shaderProgram2;
-	// Handle the shaders, load them and bind them.
-	compile_shader(&shaderProgram1, shader_code_l1);
-	compile_shader(&shaderProgram2, shader_code_l2);
-
-	std::list<GLuint> shader_program_l;
-	shader_program_l.push_back(shaderProgram1);
-	shader_program_l.push_back(shaderProgram2);
+	std::list<ShaderManager> shader_program_l;
+	shader_program_l.push_back(red);
+	shader_program_l.push_back(orange);
 
 	// Create the scene and init the context (VBO, ...).
 	create_scene(&VBO_l, &VAO_l, &EBO_l);
@@ -271,11 +254,11 @@ int main(int argc, char* argv[])
 		{
 			
 			// We need to have an active shader before setting (not getting) the uniform (global) variable.
-			glUseProgram((*elt_shader));
+			elt_shader->use();
 
 			GLfloat time = glfwGetTime();
 			GLfloat greenv = (sin(time) / 2) + 0.5;
-			GLint vertex_var_loc = glGetUniformLocation((*elt_shader), "openGLColor");
+			GLint vertex_var_loc = glGetUniformLocation(elt_shader->get_program(), "openGLColor");
 			glUniform4f(vertex_var_loc, 0.0f, greenv, 0.0f, 1.0f);
 
 			glBindVertexArray(*elt_vao);
