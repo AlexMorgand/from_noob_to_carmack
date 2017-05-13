@@ -16,5 +16,5 @@ void main()
     //FragColor = vec4(1.0, 0.5, 0.0, 1.0);
     //FragColor = openGLColor;
 	//color = outputColor;
-	color = texture(ourTexture, TexCoord) * abs(outputColor);
+	color = texture(ourTexture, TexCoord); // * abs(outputColor);
 }

@@ -66,26 +66,23 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<GLuint>* EBO_l)
 {
+
+	// FIXME: move it when you will have models.
 	// Set up vertex data (and buffer(s)) and attribute pointers.
-    //GLfloat vertices[] = {-0.5f, 0.5f, 0.0f,
-				//		  0.5f,  0.5f, 0.0f, 
-				//		  0.5f,  -0.5f, 0.0f,
-				//		  -0.5f,  -0.5f, 0.0f};
-    //GLfloat vertices[] = {-0.5f, -0.5f, 0.0f,
-				//		  0.5f,  -0.5f, 0.0f, 
-				//		  0.0f,  0.5f, 0.0f};
-	
 	// Positions // Colors // Texture Coords
-	GLfloat vertices[] = { 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // Top Right
-						   0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Bottom Right
-						   -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // Bottom Left
-						   -0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f }; // Top Left
+
+	GLfloat vertices[2][32] = {{0.2f, 0.2f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+								0.2f, -0.2f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+							    -0.2f, -0.2f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+							    -0.2f, 0.2f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+							   {-0.2f, -0.2f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+							    -0.2f, -0.6f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+							    -0.6f, -0.6f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+							    -0.6f, -0.2f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f}};
 
 
 	// FIXME: for test purposes.
-	//GLuint indices[2][3] = {{0, 1, 2}, {2, 3, 0}};
-	GLuint indices[1][6] = {{0, 1, 3, 
-		                     1, 2, 3}};
+	GLuint indices[2][6] = {{0, 1, 3, 1, 2, 3}, {0, 1, 3, 1, 2, 3}};
 
 	// FIXME: can we do better?
 	auto elt_vbo = VBO_l->begin();
@@ -111,7 +108,7 @@ void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<
 		glBindBuffer(GL_ARRAY_BUFFER, *elt_vbo);
 
 		// Fill the type array buffer with our vertices. Static data since we do not want it to move.
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices[i]), vertices[i], GL_STATIC_DRAW);
 
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(0);
@@ -208,15 +205,15 @@ int main(int argc, char* argv[])
 
 	std::list<GLuint> VAO_l;
 	VAO_l.push_back(VAO1);
-	//VAO_l.push_back(VAO2);
+	VAO_l.push_back(VAO2);
 
 	std::list<GLuint> EBO_l;
 	EBO_l.push_back(EBO1);
-	//EBO_l.push_back(EBO2);
+	EBO_l.push_back(EBO2);
 
 	std::list<GLuint> VBO_l;
 	VBO_l.push_back(VBO1);
-	//VBO_l.push_back(VBO2);
+	VBO_l.push_back(VBO2);
 
 	// Init GLFW.
 	int error_code = 0;
@@ -231,12 +228,12 @@ int main(int argc, char* argv[])
 	
 	ShaderManager red("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
 		       "C:/Users/am237982/Desktop/AlexFormation/openGL/src/red.fs");
-	//ShaderManager orange("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
-	//	          "C:/Users/am237982/Desktop/AlexFormation/openGL/src/orange.fs");
+	ShaderManager orange("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
+		          "C:/Users/am237982/Desktop/AlexFormation/openGL/src/orange.fs");
 
 	std::list<ShaderManager> shader_program_l;
 	shader_program_l.push_back(red);
-	//shader_program_l.push_back(orange);
+	shader_program_l.push_back(orange);
 
 	// Create the scene and init the context (VBO, ...).
 	create_scene(&VBO_l, &VAO_l, &EBO_l);
