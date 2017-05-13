@@ -5,12 +5,22 @@
 // Window and input handling library.
 #include <GLFW/glfw3.h>
 
+// Import texture libray.
+#include <SOIL.h>
+
 // C++ libraries.
 #include <iostream>
 #include <fstream>
 #include <list>
 
+
 #include "shader_manager.hh"
+
+GLfloat h_offset_ud = 0.0f;
+GLfloat h_offset_lr = 0.0f;
+
+
+GLuint texture;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
@@ -36,18 +46,46 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
 	}
+	else if (key == GLFW_KEY_UP)
+	{
+		h_offset_ud += 0.01f;
+	}
+	else if (key == GLFW_KEY_DOWN)
+	{
+		h_offset_ud -= 0.01f;
+	}
+	else if (key == GLFW_KEY_LEFT)
+	{
+		h_offset_lr -= 0.01f;
+	}
+	else if (key == GLFW_KEY_RIGHT)
+	{
+		h_offset_lr += 0.01f;
+	}
 }
 
 void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<GLuint>* EBO_l)
 {
 	// Set up vertex data (and buffer(s)) and attribute pointers.
-    GLfloat vertices[] = {-0.5f, 0.5f, 0.0f,
-						  0.5f,  0.5f, 0.0f, 
-						  0.5f,  -0.5f, 0.0f,
-						  -0.5f,  -0.5f, 0.0f};
+    //GLfloat vertices[] = {-0.5f, 0.5f, 0.0f,
+				//		  0.5f,  0.5f, 0.0f, 
+				//		  0.5f,  -0.5f, 0.0f,
+				//		  -0.5f,  -0.5f, 0.0f};
+    //GLfloat vertices[] = {-0.5f, -0.5f, 0.0f,
+				//		  0.5f,  -0.5f, 0.0f, 
+				//		  0.0f,  0.5f, 0.0f};
+	
+	// Positions // Colors // Texture Coords
+	GLfloat vertices[] = { 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // Top Right
+						   0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Bottom Right
+						   -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // Bottom Left
+						   -0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f }; // Top Left
+
 
 	// FIXME: for test purposes.
-	GLuint indices[2][3] = {{0, 1, 2}, {2, 3, 0}};
+	//GLuint indices[2][3] = {{0, 1, 2}, {2, 3, 0}};
+	GLuint indices[1][6] = {{0, 1, 3, 
+		                     1, 2, 3}};
 
 	// FIXME: can we do better?
 	auto elt_vbo = VBO_l->begin();
@@ -75,8 +113,14 @@ void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<
 		// Fill the type array buffer with our vertices. Static data since we do not want it to move.
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(0);
+
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(1);
+
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(2);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0); // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
 
@@ -91,7 +135,26 @@ void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<
 
 		++i;
 	}
-	// FIXME: clear VBO/EBO ...
+
+	// FIXME: maybe use OpenCV ?
+	int width, height;
+	unsigned char* image = SOIL_load_image("C:/Users/am237982/Desktop/AlexFormation/openGL/src/container.jpg", &width, &height, 0,	SOIL_LOAD_RGB);
+
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	// Set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// Set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	// Free and unbinding.
+	SOIL_free_image_data(image);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 // FIXME: not a very C++ thing to do here.
@@ -145,15 +208,15 @@ int main(int argc, char* argv[])
 
 	std::list<GLuint> VAO_l;
 	VAO_l.push_back(VAO1);
-	VAO_l.push_back(VAO2);
+	//VAO_l.push_back(VAO2);
 
 	std::list<GLuint> EBO_l;
 	EBO_l.push_back(EBO1);
-	EBO_l.push_back(EBO2);
+	//EBO_l.push_back(EBO2);
 
 	std::list<GLuint> VBO_l;
 	VBO_l.push_back(VBO1);
-	VBO_l.push_back(VBO2);
+	//VBO_l.push_back(VBO2);
 
 	// Init GLFW.
 	int error_code = 0;
@@ -168,12 +231,12 @@ int main(int argc, char* argv[])
 	
 	ShaderManager red("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
 		       "C:/Users/am237982/Desktop/AlexFormation/openGL/src/red.fs");
-	ShaderManager orange("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
-		          "C:/Users/am237982/Desktop/AlexFormation/openGL/src/orange.fs");
+	//ShaderManager orange("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
+	//	          "C:/Users/am237982/Desktop/AlexFormation/openGL/src/orange.fs");
 
 	std::list<ShaderManager> shader_program_l;
 	shader_program_l.push_back(red);
-	shader_program_l.push_back(orange);
+	//shader_program_l.push_back(orange);
 
 	// Create the scene and init the context (VBO, ...).
 	create_scene(&VBO_l, &VAO_l, &EBO_l);
@@ -191,17 +254,18 @@ int main(int argc, char* argv[])
 		auto elt_shader = shader_program_l.begin();
 		for (auto elt_vao = VAO_l.begin(); elt_vao != VAO_l.end(); ++elt_vao, ++ elt_shader)
 		{
+
+			glBindTexture(GL_TEXTURE_2D, texture);
 			
 			// We need to have an active shader before setting (not getting) the uniform (global) variable.
 			elt_shader->use();
 
-			GLfloat time = glfwGetTime();
-			GLfloat greenv = (sin(time) / 2) + 0.5;
-			GLint vertex_var_loc = glGetUniformLocation(elt_shader->get_program(), "openGLColor");
-			glUniform4f(vertex_var_loc, 0.0f, greenv, 0.0f, 1.0f);
-
+			GLint h_offset_ud_loc = glGetUniformLocation(elt_shader->get_program(), "h_offset_ud");
+			GLint h_offset_lr_loc = glGetUniformLocation(elt_shader->get_program(), "h_offset_lr");
+			glUniform1f(h_offset_ud_loc, h_offset_ud);
+			glUniform1f(h_offset_lr_loc, h_offset_lr);
 			glBindVertexArray(*elt_vao);
-			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 			glBindVertexArray(0);
 		}
 

@@ -14,6 +14,7 @@ class ShaderManager
 		ShaderManager(const std::string vert_path, const std::string frag_path);
 		void use();
 		GLuint get_program();
+		// FIXME: add uniform ?
 	private:
 		void compile_shader(std::string source_code, GLenum type);
 		std::string load_code(std::string path);
