@@ -9,12 +9,13 @@ in vec2 TexCoord;
 
 in vec4 outputColor;
 
-uniform sampler2D ourTexture;
+uniform sampler2D ourTexture1;
+uniform sampler2D ourTexture2;
 
 void main()
 {
     //FragColor = vec4(1.0, 0.5, 0.0, 1.0);
     //FragColor = openGLColor;
 	//color = outputColor;
-	color = texture(ourTexture, TexCoord); // * abs(outputColor);
+	color = mix(texture(ourTexture1, TexCoord), texture(ourTexture2, TexCoord), 0.2);
 }

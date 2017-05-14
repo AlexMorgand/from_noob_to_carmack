@@ -20,7 +20,7 @@ GLfloat h_offset_ud = 0.0f;
 GLfloat h_offset_lr = 0.0f;
 
 
-GLuint texture;
+GLuint texture1, texture2;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
@@ -64,6 +64,35 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
+GLuint* load_texture(std::string filename)
+{
+	// FIXME: Put mode in input.
+	// FIXME: maybe use OpenCV ?
+
+	GLuint texture;
+
+	int width, height;
+	unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	// Set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// Set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	// Free and unbinding.
+	SOIL_free_image_data(image);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return &texture;
+}
+
 void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<GLuint>* EBO_l)
 {
 
@@ -71,18 +100,18 @@ void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<
 	// Set up vertex data (and buffer(s)) and attribute pointers.
 	// Positions // Colors // Texture Coords
 
-	GLfloat vertices[2][32] = {{0.2f, 0.2f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+	GLfloat vertices[1][32] = {{0.2f, 0.2f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
 								0.2f, -0.2f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
 							    -0.2f, -0.2f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-							    -0.2f, 0.2f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+							    -0.2f, 0.2f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f}/*,
 							   {-0.2f, -0.2f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
 							    -0.2f, -0.6f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
 							    -0.6f, -0.6f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-							    -0.6f, -0.2f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f}};
+							    -0.6f, -0.2f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f}*/};
 
 
 	// FIXME: for test purposes.
-	GLuint indices[2][6] = {{0, 1, 3, 1, 2, 3}, {0, 1, 3, 1, 2, 3}};
+	GLuint indices[1][6] = {{0, 1, 3, 1, 2, 3}/*, {0, 1, 3, 1, 2, 3}*/};
 
 	// FIXME: can we do better?
 	auto elt_vbo = VBO_l->begin();
@@ -120,11 +149,9 @@ void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<
 		glEnableVertexAttribArray(2);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0); // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
-
 	
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *elt_ebo);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices[i]), indices[i], GL_STATIC_DRAW);
-	
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices[i]), indices[i], GL_STATIC_DRAW);	
 
 		// Unbind VAO by setting it to a null pointer 
 		// (it's always a good thing to unbind any buffer/array to prevent strange bugs).
@@ -133,25 +160,8 @@ void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<
 		++i;
 	}
 
-	// FIXME: maybe use OpenCV ?
-	int width, height;
-	unsigned char* image = SOIL_load_image("C:/Users/am237982/Desktop/AlexFormation/openGL/src/container.jpg", &width, &height, 0,	SOIL_LOAD_RGB);
-
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	// Set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// Set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	// Free and unbinding.
-	SOIL_free_image_data(image);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	texture1 = *(load_texture("C:/Users/am237982/Desktop/AlexFormation/openGL/src/container.jpg"));
+	texture2 = *(load_texture("C:/Users/am237982/Desktop/AlexFormation/openGL/src/awesomeface.png"));
 }
 
 // FIXME: not a very C++ thing to do here.
@@ -205,15 +215,15 @@ int main(int argc, char* argv[])
 
 	std::list<GLuint> VAO_l;
 	VAO_l.push_back(VAO1);
-	VAO_l.push_back(VAO2);
+	//VAO_l.push_back(VAO2);
 
 	std::list<GLuint> EBO_l;
 	EBO_l.push_back(EBO1);
-	EBO_l.push_back(EBO2);
+	//EBO_l.push_back(EBO2);
 
 	std::list<GLuint> VBO_l;
 	VBO_l.push_back(VBO1);
-	VBO_l.push_back(VBO2);
+	//VBO_l.push_back(VBO2);
 
 	// Init GLFW.
 	int error_code = 0;
@@ -222,18 +232,19 @@ int main(int argc, char* argv[])
 	if (error_code)
 		return error_code;
 
+	// Init glew.
 	error_code = init_glew();
 	if (error_code)
 		return error_code;
 	
 	ShaderManager red("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
 		       "C:/Users/am237982/Desktop/AlexFormation/openGL/src/red.fs");
-	ShaderManager orange("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
-		          "C:/Users/am237982/Desktop/AlexFormation/openGL/src/orange.fs");
+	//ShaderManager orange("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
+	//	          "C:/Users/am237982/Desktop/AlexFormation/openGL/src/orange.fs");
 
 	std::list<ShaderManager> shader_program_l;
 	shader_program_l.push_back(red);
-	shader_program_l.push_back(orange);
+	//shader_program_l.push_back(orange);
 
 	// Create the scene and init the context (VBO, ...).
 	create_scene(&VBO_l, &VAO_l, &EBO_l);
@@ -252,7 +263,12 @@ int main(int argc, char* argv[])
 		for (auto elt_vao = VAO_l.begin(); elt_vao != VAO_l.end(); ++elt_vao, ++ elt_shader)
 		{
 
-			glBindTexture(GL_TEXTURE_2D, texture);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture1);
+			glUniform1i(glGetUniformLocation(elt_shader->get_program() , "ourTexture1"), 0);
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, texture2);
+			glUniform1i(glGetUniformLocation(elt_shader->get_program() , "ourTexture2"), 1);
 			
 			// We need to have an active shader before setting (not getting) the uniform (global) variable.
 			elt_shader->use();
