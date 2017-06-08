@@ -8,6 +8,12 @@
 // Import texture libray.
 #include <SOIL.h>
 
+// Linear algebra libray for transformations.
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+
 // C++ libraries.
 #include <iostream>
 #include <fstream>
@@ -100,18 +106,18 @@ void create_scene(std::list<GLuint>* VBO_l, std::list<GLuint>* VAO_l, std::list<
 	// Set up vertex data (and buffer(s)) and attribute pointers.
 	// Positions // Colors // Texture Coords
 
-	GLfloat vertices[1][32] = {{0.2f, 0.2f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+	GLfloat vertices[2][32] = {{0.2f, 0.2f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
 								0.2f, -0.2f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
 							    -0.2f, -0.2f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-							    -0.2f, 0.2f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f}/*,
-							   {-0.2f, -0.2f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-							    -0.2f, -0.6f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-							    -0.6f, -0.6f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-							    -0.6f, -0.2f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f}*/};
+							    -0.2f, 0.2f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+							   {0.8f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+							    0.8f, 0.8f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+							    1.0f, 0.8f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+							    1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f}};
 
 
 	// FIXME: for test purposes.
-	GLuint indices[1][6] = {{0, 1, 3, 1, 2, 3}/*, {0, 1, 3, 1, 2, 3}*/};
+	GLuint indices[2][6] = {{0, 1, 3, 1, 2, 3}, {0, 1, 3, 1, 2, 3}};
 
 	// FIXME: can we do better?
 	auto elt_vbo = VBO_l->begin();
@@ -215,15 +221,15 @@ int main(int argc, char* argv[])
 
 	std::list<GLuint> VAO_l;
 	VAO_l.push_back(VAO1);
-	//VAO_l.push_back(VAO2);
+	VAO_l.push_back(VAO2);
 
 	std::list<GLuint> EBO_l;
 	EBO_l.push_back(EBO1);
-	//EBO_l.push_back(EBO2);
+	EBO_l.push_back(EBO2);
 
 	std::list<GLuint> VBO_l;
 	VBO_l.push_back(VBO1);
-	//VBO_l.push_back(VBO2);
+	VBO_l.push_back(VBO2);
 
 	// Init GLFW.
 	int error_code = 0;
@@ -239,12 +245,12 @@ int main(int argc, char* argv[])
 	
 	ShaderManager red("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
 		       "C:/Users/am237982/Desktop/AlexFormation/openGL/src/red.fs");
-	//ShaderManager orange("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
-	//	          "C:/Users/am237982/Desktop/AlexFormation/openGL/src/orange.fs");
+	ShaderManager orange("C:/Users/am237982/Desktop/AlexFormation/openGL/src/shader.vs",
+		          "C:/Users/am237982/Desktop/AlexFormation/openGL/src/orange.fs");
 
 	std::list<ShaderManager> shader_program_l;
 	shader_program_l.push_back(red);
-	//shader_program_l.push_back(orange);
+	shader_program_l.push_back(orange);
 
 	// Create the scene and init the context (VBO, ...).
 	create_scene(&VBO_l, &VAO_l, &EBO_l);
@@ -262,16 +268,39 @@ int main(int argc, char* argv[])
 		auto elt_shader = shader_program_l.begin();
 		for (auto elt_vao = VAO_l.begin(); elt_vao != VAO_l.end(); ++elt_vao, ++ elt_shader)
 		{
-
+			
+			// Bind textures and texture units.
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, texture1);
 			glUniform1i(glGetUniformLocation(elt_shader->get_program() , "ourTexture1"), 0);
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, texture2);
 			glUniform1i(glGetUniformLocation(elt_shader->get_program() , "ourTexture2"), 1);
-			
+
 			// We need to have an active shader before setting (not getting) the uniform (global) variable.
 			elt_shader->use();
+
+			// Apply transformation.
+
+			// Create the transformation from model to 3D world space.
+			glm::mat4 model;
+			model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			//// Create the transformation from 3D world space to camera space.
+			glm::mat4 view;
+			view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+			//// From camera space to image space. K like reprensentation.
+			glm::mat4 projection;
+			projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+			
+			// Pass the transformations to the shaders.
+			GLint modelLoc = glGetUniformLocation(elt_shader->get_program(), "model");
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+			
+			GLint viewLoc = glGetUniformLocation(elt_shader->get_program(), "view");
+			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+			
+			GLint projectionLoc = glGetUniformLocation(elt_shader->get_program(), "projection");
+			glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 			GLint h_offset_ud_loc = glGetUniformLocation(elt_shader->get_program(), "h_offset_ud");
 			GLint h_offset_lr_loc = glGetUniformLocation(elt_shader->get_program(), "h_offset_lr");
