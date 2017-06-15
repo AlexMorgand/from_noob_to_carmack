@@ -1,7 +1,7 @@
 #version 330
 
 layout (location = 0) in vec3 Position;
-layout (location = 1) in vec3 color;
+// layout (location = 1) in vec3 color;
 layout (location = 2) in vec2 texCoord;
 
 uniform float h_offset_ud;
@@ -12,7 +12,7 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec3 ourColor;
+//out vec3 ourColor;
 out vec2 TexCoord;
 out vec4 outputColor;
 
@@ -23,7 +23,7 @@ void main()
     gl_Position = pos;
 	outputColor = pos;
 	
-	ourColor = color;
+	//ourColor = color;
 	TexCoord = vec2(texCoord.x, 1.0 - texCoord.y);
 	
 	

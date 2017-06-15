@@ -4,7 +4,7 @@ out vec4 color;
 
 // Variable from CPU (OpenGL implementation).
 uniform vec4 openGLColor;
-in vec3 ourColor;
+//in vec3 ourColor;
 in vec2 TexCoord;
 
 in vec4 outputColor;
